@@ -36,12 +36,13 @@ pixels.
 ## Contributing
 
 Here,we have shown some segmentation result by using different methods. Green and red contours mean the automatically segmented lesion area and ground truth.
+![666](https://github.com/haozhiwen-fighting/Contrast-enhanced-Ultrasound-for-Thyroid-Nodules-Diagnosis/assets/149654243/e1e03307-2272-4a05-8dcc-5f3e1eae7bed)
 
-![666666](https://github.com/haozhiwen-fighting/Contrast-enhanced-Ultrasound-for-Thyroid-Nodules-Diagnosis/assets/149654243/d37f1c29-3bf9-4710-a91c-35646fc30e02)
+
 
 Grad-CAM visualization results.Through Grad-CAM visualization results, we can find that our model can accurately focus on the lesion area, instead of only focusing on the noisy, artifactual area of the lesion as in the baseline model.
 
-![666](https://github.com/haozhiwen-fighting/Contrast-enhanced-Ultrasound-for-Thyroid-Nodules-Diagnosis/assets/149654243/e1e03307-2272-4a05-8dcc-5f3e1eae7bed)
+![666666](https://github.com/haozhiwen-fighting/Contrast-enhanced-Ultrasound-for-Thyroid-Nodules-Diagnosis/assets/149654243/d37f1c29-3bf9-4710-a91c-35646fc30e02)
 
 #Here we have pre-published our code, and we will publish the other relevant documents when the paper is officially published. 🔥
 
