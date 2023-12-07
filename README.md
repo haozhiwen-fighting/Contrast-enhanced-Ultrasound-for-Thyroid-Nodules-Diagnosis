@@ -16,8 +16,6 @@ Cuda 11.3
 
 Other packages
 
-pip install -r requirements.txt
-
 
 ## Usage
 
