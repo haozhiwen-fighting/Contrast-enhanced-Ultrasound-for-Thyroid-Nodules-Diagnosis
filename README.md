@@ -7,10 +7,15 @@ Some of our work has been accepted by MICCAI 2023,you can download it via this l
 
 ## Install
 Install the dependencies:
+
 Python 3.9
+
 Pytorch 1.11.0
+
 Cuda 11.3
+
 Other packages
+
 pip install -r requirements.txt
 
 
