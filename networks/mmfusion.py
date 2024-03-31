@@ -23,57 +23,10 @@ class LinearLayer(nn.Module):
 class MMDynamic(nn.Module):
     def __init__(self, in_dim, hidden_dim, num_class, dropout):
         super().__init__()
-        self.views = len(in_dim)
-        self.classes = num_class
-        self.dropout = dropout
-
-        self.FeatureInforEncoder = nn.ModuleList([LinearLayer(in_dim[view], in_dim[view]) for view in range(self.views)])
-        self.TCPConfidenceLayer = nn.ModuleList([LinearLayer(hidden_dim[0], 1) for _ in range(self.views)])
-        self.TCPClassifierLayer = nn.ModuleList([LinearLayer(hidden_dim[0], num_class) for _ in range(self.views)])
-        self.FeatureEncoder = nn.ModuleList([LinearLayer(in_dim[view], hidden_dim[0]) for view in range(self.views)])
-
-        self.MMClasifier = []
-        for layer in range(1, len(hidden_dim)-1):
-            self.MMClasifier.append(LinearLayer(self.views*hidden_dim[0], hidden_dim[layer]))
-            self.MMClasifier.append(nn.ReLU())
-            self.MMClasifier.append(nn.Dropout(p=dropout))
-        if len(self.MMClasifier):
-            self.MMClasifier.append(LinearLayer(hidden_dim[-1], num_class))
-        else:
-            self.MMClasifier.append(LinearLayer(self.views*hidden_dim[-1], num_class))
-        self.MMClasifier = nn.Sequential(*self.MMClasifier)
-
+        
 
     def forward(self, data_list, label=None, infer=False):
-        criterion = torch.nn.CrossEntropyLoss(reduction='none')
-        FeatureInfo, feature, TCPLogit, TCPConfidence = dict(), dict(), dict(), dict()
-        fea=[]
-        for view in range(self.views):
-            FeatureInfo[view] = torch.sigmoid(self.FeatureInforEncoder[view](data_list[view]))     #每个特征的信息性不同
-            feature[view] = data_list[view] * FeatureInfo[view]
-            feature[view] = self.FeatureEncoder[view](feature[view])
-            feature[view] = F.relu(feature[view])
-            feature[view] = F.dropout(feature[view], self.dropout, training=self.training)
-            TCPLogit[view] = self.TCPClassifierLayer[view](feature[view])
-            TCPConfidence[view] = self.TCPConfidenceLayer[view](feature[view])     #每个模态的信息性
-            feature[view] = feature[view] * TCPConfidence[view]
-
-        MMfeature = torch.cat([i for i in feature.values()], dim=1)
-        MMlogit = self.MMClasifier(MMfeature)
-        MMLoss =0.0
-        # MMLoss = torch.mean(criterion(MMlogit, label.long()))
-        if infer:
-            return MMLoss,MMlogit
-        tcp=[0,0,0,0]
-        for view in range(self.views):
-            # MMLoss = MMLoss+torch.mean(FeatureInfo[view])
-            MMLoss = MMLoss
-            pred = F.softmax(TCPLogit[view], dim=1)
-            p_target = torch.gather(input=pred, dim=1, index=label.long().unsqueeze(dim=1)).view(-1)
-            tcp[view]=p_target
-            # confidence_loss = torch.mean(F.mse_loss(TCPConfidence[view].view(-1), p_target)+criterion(TCPLogit[view], label.long()))
-            confidence_loss = torch.mean(F.mse_loss(TCPConfidence[view].view(-1), p_target)+criterion(pred, label.long()))
-            MMLoss = MMLoss+confidence_loss
+        
         return MMLoss, MMlogit,tcp
     
     def infer(self, data_list):
