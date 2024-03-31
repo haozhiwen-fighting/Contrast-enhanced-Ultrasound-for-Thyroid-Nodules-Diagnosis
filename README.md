@@ -1,6 +1,6 @@
 # Contrast-enhanced-Ultrasound-for-Thyroid-Nodules-Diagnosis
 
-
+#Here we have pre-published our code, and we will publish the other relevant documents when the paper is officially published. 🔥
 We have proposed a novel method "Do as Sonographers Think: Contrast-enhanced Ultrasound for Thyroid Nodules Diagnosis via Microvascular Infiltrative Awareness".
 
 Some of our work has been accepted by MICCAI 2023,you can download it via this link https://link.springer.com/chapter/10.1007/978-3-031-43987-2_17   🔥
@@ -45,7 +45,9 @@ Grad-CAM visualization results.Through Grad-CAM visualization results, we can fi
 
 ![666666](https://github.com/haozhiwen-fighting/Contrast-enhanced-Ultrasound-for-Thyroid-Nodules-Diagnosis/assets/149654243/d37f1c29-3bf9-4710-a91c-35646fc30e02)
 
-#Here we have pre-published our code, and we will publish the other relevant documents when the paper is officially published. 🔥
+##Acknowledge
+
+
 
 
 
