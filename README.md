@@ -31,7 +31,8 @@ the acquisition of both dynamic gray-scale US and CEUS
 images simultaneously, using the dual-image display format.
 Each frame of the dual-images had a resolution of 600×800
 pixels. 
-
+## How to get the datasets🔥🔥🔥🔥🔥🔥
+If you are interested in accessing the dataset for study purposes can reach out to us via email(941042281@qq.com). Upon contacting us, you will be required to sign a privacy agreement, ensuring that the data is used solely for non-commercial purposes.
 
 ## Contributing
 
