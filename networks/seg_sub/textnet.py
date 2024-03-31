@@ -29,13 +29,7 @@ class UpBlok(nn.Module):
 class RRGN(nn.Module):
     def __init__(self, in_channels):
         super().__init__()
-        self.FNUM = len(cfg.fuc_k)
-        self.SepareConv0 = nn.Sequential(
-            nn.Conv2d(in_channels, in_channels, kernel_size=(5, 1), stride=1, padding=1),
-            nn.Conv2d(in_channels, in_channels, kernel_size=(1, 5), stride=1, padding=1),
-            nn.Conv2d(in_channels, 1, kernel_size=1, stride=1, padding=0),
-        )
-        channels2 = in_channels + 1
+        
         self.SepareConv1 = nn.Sequential(
             nn.Conv2d(channels2, channels2, kernel_size=(5, 1), stride=1, padding=1),
             nn.Conv2d(channels2, channels2, kernel_size=(1, 5), stride=1, padding=1),
