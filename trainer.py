@@ -71,17 +71,10 @@ class AutomaticWeightedLoss(nn.Module):
     """
     def __init__(self, num=2):
         super(AutomaticWeightedLoss, self).__init__()
-        params = torch.ones(num, requires_grad=True)
-        self.params = torch.nn.Parameter(params,requires_grad=True)
+       
 
     def forward(self, *x):
-        loss_sum = 0
-        # b=self.params[1]
-        # a=self.params[0]
-        for i, loss in enumerate(x):
-            loss1=0
-            loss1= 0.5 / (self.params[i] ** 2) * loss + torch.log(1 + self.params[i] ** 2)
-            loss_sum=loss_sum+loss1
+       
         return loss_sum
 class BCEDiceLoss11(nn.Module):
     def __init__(self):
@@ -113,13 +106,9 @@ class BCEDiceLoss11(nn.Module):
 class Task_Loss(nn.Module):
     def __init__(self):
         super().__init__()
-        self.sig_weight = torch.nn.Parameter(torch.FloatTensor(1), requires_grad=True)
-        self.sig_weight.data.fill_(0.25)    
+         
     def forward(self,p_con,p_pre):
-        a=p_con-p_pre
-        loss=np.linalg.norm(a,ord=2)
-        loss=loss*loss
-        loss=loss/(self.sig_weight*self.sig_weight*2+0.000001)+np.log(self.sig_weight)
+        
         return loss
 def dice(x, y):
     intersect = np.sum(np.sum(np.sum(x * y)))
@@ -190,16 +179,10 @@ def train_epoch(model,
             labels_one_hot=labels_one_hot.scatter_(1, clslabel.view(-1,1).long(), 1).to(device)
             data=[data_us,data_ceus]
             mmloss,cla,tar_us,tar_ceus = model(data,clslabel,infer=False)          
-            cla = nn.Softmax(dim=-1)(cla)
-            # _cla_loss=mmloss+cla_loss(cla,labels_one_hot)
-            # seg_loss=loss_func(tar_us,tar_ceus,train_mask, tr_mask,target)
-            _cla_loss,seg_loss,cla_loss,par1,par2,par3=loss_func(tar_us,tar_ceus,train_mask, tr_mask,target,cla,labels_one_hot,mmloss)
-            # tar_loss=task_loss()
-            # _cla_loss_=cla_loss(cla,labels_one_hot)
-            # # loss = loss_func(output, train_mask, tr_mask)
-            # _cla_loss=_cla_loss+seg_loss
-            # _cla_loss = aw1(_cla_loss, seg_loss)
-            # _cla_loss=_cla_loss_
+            ######
+
+            ########
+            
         if args.amp:
             scaler.scale(_cla_loss).backward()
             scaler.step(optimizer)
@@ -427,23 +410,7 @@ def run_training(
     bestacc.append(class_max_acc)
     print('best acc',bestacc)
     print('cv {}'.format(class_max_acc))
-# 绘制loss曲线
-    plt.subplot(1,1,1)
-    try:
-        train_loss_lines1.remove(train_loss_lines1[0])  # 移除上一步曲线
-        val_loss_lines1.remove(val_loss_lines1[0])
-    except Exception:
-        pass
 
-    train_loss_lines1 = plt.plot(xzhou, train_loss_list, 'r', lw=1)  # lw为曲线宽度
-    val_loss_lines1 = plt.plot(xzhou, val_loss_list, 'b', lw=1)
-    plt.title("loss")
-    plt.xlabel("epoch")
-    plt.ylabel("loss")
-    plt.legend(["train_loss","val_acc"])
-    plt.show()
-    plt.pause(0.1)
-    # acc=class_max_acc
     print('Training Finished !, Best Accuracy: ',class_max_acc)
 
     return class_max_acc
