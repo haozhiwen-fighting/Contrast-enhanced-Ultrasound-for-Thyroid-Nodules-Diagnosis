@@ -26,8 +26,8 @@ parser = argparse.ArgumentParser(description='UNETR segmentation pipeline')
 parser.add_argument('--checkpoint', default=None, help='start training from saved checkpoint')
 parser.add_argument('--logdir', default='test', type=str, help='directory to save the tensorboard logs')
 parser.add_argument('--pretrained_dir', default='./pretrained_models/', type=str, help='pretrained checkpoint directory')
-# parser.add_argument('--data_dir', default='D:/HHJ/second/CEUS/classification/data/', type=str, help='dataset directory')
-parser.add_argument('--data_dir', default='D:/data/CEUS/thyoid video/data_aug1/', type=str, help='dataset directory')
+# parser.add_argument('--data_dir', default='', type=str, help='dataset directory')
+parser.add_argument('--data_dir', default='', type=str, help='dataset directory')
 parser.add_argument('--pretrained_model_name', default='model.pt', type=str, help='pretrained model name')
 parser.add_argument('--save_checkpoint', action='store_true', help='save checkpoint during training')
 parser.add_argument('--max_epochs', default=100, type=int, help='max number of training epochs')
@@ -48,9 +48,6 @@ parser.add_argument('--workers', default=1, type=int, help='number of workers')
 parser.add_argument('--model_name', default='unetr', type=str, help='model name')
 parser.add_argument('--pos_embed', default='perceptron', type=str, help='type of position embedding')
 parser.add_argument('--norm_name', default='instance', type=str, help='normalization layer type in decoder')
-parser.add_argument('--num_heads', default=4, type=int, help='number of attention heads in ViT encoder')  #12
-parser.add_argument('--mlp_dim', default=3027, type=int, help='mlp dimention in ViT encoder')      #3027
-parser.add_argument('--hidden_size', default=768, type=int, help='hidden size dimention in ViT encoder')     #768
 parser.add_argument('--feature_size', default=16, type=int, help='feature size dimention')   #16
 parser.add_argument('--in_channels', default=3, type=int, help='number of input channels')
 parser.add_argument('--out_channels', default=3, type=int, help='number of output channels')
@@ -75,58 +72,7 @@ parser.add_argument('--frames', default=7, type=int, help='the len of video')
 import torch.nn.functional as F
 from util.config import config as cfg
 import numpy as np
-class BCEDiceLoss2(nn.Module):
-    def __init__(self):
-        super().__init__()
-    def one_hot_encoder(self, input_tensor):
-        tensor_list = []
-        # inputtarget=input_tensor.detach().cpu().numpy()
-        # a=inputtarget[0]
-        for i in range(2):
-            temp_prob = input_tensor == i  # * torch.ones_like(input_tensor)
-            tensor_list.append(temp_prob)
-        output_tensor = torch.cat(tensor_list, dim=1)
-        return output_tensor.float()
 
-    def forward(self, input, target):
-        #####one-shot
-        target=self.one_hot_encoder(target)
-        bce = F.binary_cross_entropy_with_logits(input, target)
-        smooth = 1e-5
-        input = torch.sigmoid(input)
-        num = target.size(0)
-        input = input.view(num, -1)
-        target = target.view(num, -1)
-        intersection = (input * target)
-        dice = (2. * intersection.sum(1) + smooth) / (input.sum(1) + target.sum(1) + smooth)
-        dice = 1 - dice.sum() / num
-        return 0.5 * bce + dice
-class BCEDiceLoss1(nn.Module):
-    def __init__(self):
-        super().__init__()
-    def one_hot_encoder(self, input_tensor):
-        tensor_list = []
-        # inputtarget=input_tensor.detach().cpu().numpy()
-        # a=inputtarget[0]
-        for i in range(2):
-            temp_prob = input_tensor == i  # * torch.ones_like(input_tensor)
-            tensor_list.append(temp_prob)
-        output_tensor = torch.cat(tensor_list, dim=1)
-        return output_tensor.float()
-
-    def forward(self, input, target):
-        #####one-shot
-        # target=self.one_hot_encoder(target)
-        bce = F.binary_cross_entropy_with_logits(input, target)
-        smooth = 1e-5
-        input = torch.sigmoid(input)
-        num = target.size(0)
-        input = input.view(num, -1)
-        target = target.view(num, -1)
-        intersection = (input * target)
-        dice = (2. * intersection.sum(1) + smooth) / (input.sum(1) + target.sum(1) + smooth)
-        dice = 1 - dice.sum() / num
-        return 0.5 * bce + dice
 class DiceLoss(nn.Module):
     def __init__(self, n_classes):
         super(DiceLoss, self).__init__()
@@ -170,111 +116,7 @@ class DiceLoss(nn.Module):
             # loss += dice * weight[i]
             loss += dice 
         return loss / self.n_classes
-class TextLoss(nn.Module):
 
-    def __init__(self):
-        super().__init__()
-        self.MSE_loss = torch.nn.MSELoss(reduce=False, size_average=False)
-        self.KL_loss = torch.nn.KLDivLoss(reduce=False, size_average=False)
-        self.seg_loss=BCEDiceLoss2()
-        self.seg_loss1=BCEDiceLoss1()
-        self.k = [1,5,9]
-        # self.sig_weight = torch.nn.Parameter(torch.FloatTensor(1), requires_grad=True).cuda()
-        # self.sig_weight.data.fill_(0.25)
-
-    @staticmethod
-    def single_image_loss(pre_loss, loss_label):
-        batch_size = pre_loss.shape[0]
-        sum_loss = torch.mean(pre_loss.view(-1)) * 0
-        pre_loss = pre_loss.view(batch_size, -1)
-        loss_label = loss_label.view(batch_size, -1)
-        eps = 0.001     #这是个什么阈值
-        for i in range(batch_size):
-            average_number = 0
-            positive_pixel = len(pre_loss[i][(loss_label[i] >= eps)])
-            average_number += positive_pixel
-            if positive_pixel != 0:
-                posi_loss = torch.mean(pre_loss[i][(loss_label[i] >= eps)])
-                sum_loss += posi_loss
-                if len(pre_loss[i][(loss_label[i] < eps)]) < 3 * positive_pixel:
-                    nega_loss = torch.mean(pre_loss[i][(loss_label[i] < eps)])
-                    average_number += len(pre_loss[i][(loss_label[i] < eps)])
-                else:
-                    nega_loss = torch.mean(torch.topk(pre_loss[i][(loss_label[i] < eps)], 3 * positive_pixel)[0])
-                    average_number += 3 * positive_pixel
-                sum_loss += nega_loss
-            else:
-                nega_loss = torch.mean(torch.topk(pre_loss[i], 100)[0])
-                average_number += 100
-                sum_loss += nega_loss
-            # sum_loss += loss/average_number
-
-        return sum_loss
-
-    @staticmethod
-    def smooth_l1_loss(inputs, target, sigma=9.0, reduction='mean'):
-        try:
-            diff = torch.abs(inputs - target)
-            less_one = (diff < 1.0 / sigma).float()
-            loss = less_one * 0.5 * diff ** 2 * sigma \
-                   + torch.abs(torch.tensor(1.0) - less_one) * (diff - 0.5 / sigma)
-            loss = loss if loss.numel() > 0 else torch.zeros_like(inputs)
-        except Exception as e:
-            print('smooth L1 Exception:', e)
-            loss = torch.zeros_like(inputs)
-        if reduction == 'sum':
-            loss = torch.sum(loss)
-        elif reduction == 'mean':
-            loss = torch.mean(loss)
-        else:
-            loss = loss
-        return loss
-
-    def sigmoid_alpha(self, x, d):
-        eps = torch.tensor(0.0001)
-        alpha = self.k
-        dm = torch.where(d >= eps, d, eps)
-        betak = (1 + np.exp(-alpha))/(1 - np.exp(-alpha))
-        res = (2*torch.sigmoid(x * alpha/dm) - 1)*betak
-
-        return torch.relu(res)
-
-    def forward(self,us_input, inputs, train_mask, tr_mask,label,sig_weight):
-        """
-          calculate textsnake loss
-        """
-        b, c, h, w = inputs.shape
-        loss_sum = torch.tensor(0.)
-        for i in range(c):
-            reg_loss = self.MSE_loss(torch.sigmoid(inputs[:, i]), tr_mask[:, :, :, i])
-            reg_loss = torch.mul(reg_loss, train_mask.float().squeeze(dim=1))
-            reg_loss = self.single_image_loss(reg_loss,  tr_mask[:, :, :, i]) / b    #难样本处理
-            loss_sum = loss_sum + reg_loss
-        # loss_sum=loss_sum/(2*(self.sig_weight*self.sig_weight)+0.000001)-np.log(self.sig_weight.detach().cpu()).cuda()
-        loss_sum=loss_sum/(2*(sig_weight**2)+0.000001)-torch.log(sig_weight)
-        seg_loss1=self.seg_loss(us_input,label)
-        seg_loss2=self.seg_loss1(inputs[:, i].unsqueeze(dim=1),label)
-        loss_sum=seg_loss1+seg_loss2+loss_sum
-        return loss_sum,sig_weight.detach().cpu().numpy()
-class AutomaticWeightedLoss(nn.Module):
-
-    def __init__(self, seg,cla,num=2):
-        super(AutomaticWeightedLoss, self).__init__()
-        self.seg=seg
-        self.cla=cla
-        params = torch.ones(num)
-        self.params = torch.nn.Parameter(params,requires_grad=True)
-        self.sig_weight = torch.nn.Parameter(torch.FloatTensor(1), requires_grad=True).cuda()
-        self.sig_weight.data.fill_(0.25)
-    def forward(self, us_input, inputs, train_mask, tr_mask,label,cla_out,cla_tar,m_loss):
-        loss_sum = 0
-        loss_seg,par=self.seg(us_input, inputs, train_mask, tr_mask,label,self.sig_weight)
-        loss_cla=self.cla(cla_out,cla_tar)+m_loss
-        loss1= 0.5 / (self.params[0] ** 2) * loss_seg + torch.log(1 + self.params[0] ** 2)
-        loss2= 0.5 / (self.params[1] ** 2) * loss_cla + torch.log(1 + self.params[1] ** 2)
-
-        loss_sum=loss2+loss1
-        return loss_sum,loss_seg,loss_cla,self.params[0],self.params[1],par[0]
 def setup_seed(seed):
      torch.manual_seed(seed)
      torch.cuda.manual_seed_all(seed)
@@ -329,7 +171,7 @@ def main_worker(gpu, args):
         # model=R3DClassifier(num_classes=2)
         # model=R2Plus1DClassifier(num_classes=2)
         # model=cla_p()
-        # model_path='D:/HHJ/second/CEUS_TMI/classfication/pre_trained/model_finalcla.pt'
+        # model_path=''
         # checkpoint=torch.load(model_path) 
         # model.load_state_dict(checkpoint['state_dict'])
         # model=C3D_mu(2)
